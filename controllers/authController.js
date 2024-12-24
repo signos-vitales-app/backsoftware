@@ -149,8 +149,8 @@ exports.resetPassword = async (req, res) => {
         await User.saveResetToken(user.id, token);
 
         // Cambia el enlace para que apunte al frontend
-        const resetLink = `http://localhost:5173/reset-password/${token}`;
-
+        const serverUrl = `${req.protocol}://${req.get('host')}`;
+        const resetLink = `${serverUrl}/reset-password/${token}`;
         await transporter.sendMail({
             from: process.env.EMAIL_USER,
             to: email,
