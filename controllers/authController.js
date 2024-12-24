@@ -150,7 +150,7 @@ exports.resetPassword = async (req, res) => {
 
         // Cambia el enlace para que apunte al frontend
         const serverUrl = `${req.protocol}://${req.get('host')}`;
-        const resetLink = `${serverUrl}/reset-password/${token}`;
+        const resetLink = `https://frontsoftware-6n8d.onrender.com/reset-password/${token}`;
         await transporter.sendMail({
             from: process.env.EMAIL_USER,
             to: email,
