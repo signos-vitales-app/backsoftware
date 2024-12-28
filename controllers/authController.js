@@ -33,7 +33,6 @@ const upload = multer({
         cb(new Error('Error: Solo se permiten archivos de imagen!'));
     }
 });
-
 // Función de registro de usuario con correo de bienvenida
 exports.register = async (req, res) => {
     try {
@@ -50,8 +49,8 @@ exports.register = async (req, res) => {
             const existingEmail = await User.findByEmail(email);
             const existingNumeroIdentificacion = await User.findByNumeroIdentificacion(numero_identificacion);
 
-            if (existingUser) return res.status(400).json({ message: "Username already taken" });
-            if (existingEmail) return res.status(400).json({ message: "Email already in use" });
+            if (existingUser) return res.status(400).json({ message: "El nombre de usuario ya está en uso" });
+            if (existingEmail) return res.status(400).json({ message: "El correo electrónico ya está en uso" });
             if (existingNumeroIdentificacion) return res.status(400).json({ message: "Número de identificación ya está registrado" });
             
             // Crear el nuevo usuario con la imagen de perfil
@@ -64,13 +63,22 @@ exports.register = async (req, res) => {
                 numero_identificacion
             });
 
+            // Mapeo de roles para mostrarlos en un formato más bonito
+            const roleNames = {
+                user: 'enfermero/a',
+                staff: 'médico/a',
+                jefe: 'jefe de Enfermería',
+            };
+
+            const roleDisplay = roleNames[role] || 'Usuario';
+
             // Enviar correo de bienvenida
             await transporter.sendMail({
                 from: process.env.EMAIL_USER,
                 to: email,
-                subject: "Bienvenido al sistema de gestion de pacientes",
+                subject: "Bienvenido al sistema de gestión de pacientes",
                 html: `<p>Hola ${username},</p>
-                       <p>¡Bienvenido/a! Tu cuenta se ha creado correctamente con el rol de ${role} de enfermería.</p>
+                       <p>¡Bienvenido/a! Tu cuenta se ha creado correctamente con el rol de ${roleDisplay}.</p>
                        <p>Gracias por registrarte con nosotros.</p>`
             });
 
@@ -85,7 +93,6 @@ exports.register = async (req, res) => {
         res.status(500).json({ message: "Error en el servidor" });
     }
 };
-
 // Función de inicio de sesión
 exports.login = async (req, res) => {
     try {
