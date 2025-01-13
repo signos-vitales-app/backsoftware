@@ -1,8 +1,8 @@
 const jwt = require('jsonwebtoken'); //utiliza json para el token 
-const transporter = require('../config/nodemailer'); //requiere nodemailer para el envio de correos electronicos 
+const transporter = require('../config/nodemailer'); 
 const crypto = require('crypto'); //encripta la contraseña 
-const User = require('../models/User'); //requiere el modelo del uusario para poder registarlos 
-const bcrypt = require('bcryptjs'); // encrita de igual manera los atos 
+const User = require('../models/User'); //requiere el modelo del usario para poder registarlos 
+const bcrypt = require('bcryptjs'); // encrita de igual manera los datos 
 const multer = require('multer');
 const path = require('path');
 const db = require('../config/db');
@@ -33,6 +33,7 @@ const upload = multer({
         cb(new Error('Error: Solo se permiten archivos de imagen!'));
     }
 });
+
 // Función de registro de usuario con correo de bienvenida
 exports.register = async (req, res) => {
     try {
@@ -51,7 +52,7 @@ exports.register = async (req, res) => {
 
             if (existingUser) return res.status(400).json({ message: "El nombre de usuario ya está en uso" });
             if (existingEmail) return res.status(400).json({ message: "El correo electrónico ya está en uso" });
-            if (existingNumeroIdentificacion) return res.status(400).json({ message: "Número de identificación ya está registrado" });
+            if (existingNumeroIdentificacion) return res.status(400).json({ message: "El Número de identificación ya está registrado" });
             
             // Crear el nuevo usuario con la imagen de perfil
             const userId = await User.createUser({
@@ -63,7 +64,7 @@ exports.register = async (req, res) => {
                 numero_identificacion
             });
 
-            // Mapeo de roles para mostrarlos en un formato más bonito
+            // Mapeo de roles para mostrarlos en un formato más legible
             const roleNames = {
                 user: 'enfermero/a',
                 staff: 'médico/a',
@@ -93,6 +94,7 @@ exports.register = async (req, res) => {
         res.status(500).json({ message: "Error en el servidor" });
     }
 };
+
 // Función de inicio de sesión
 exports.login = async (req, res) => {
     try {
@@ -158,6 +160,7 @@ exports.resetPassword = async (req, res) => {
         // Cambia el enlace para que apunte al frontend
         const serverUrl = `${req.protocol}://${req.get('host')}`;
         const resetLink = `https://frontsoftware-6n8d.onrender.com/reset-password/${token}`;
+        
         await transporter.sendMail({
             from: process.env.EMAIL_USER,
             to: email,
@@ -172,7 +175,7 @@ exports.resetPassword = async (req, res) => {
     }
 };
 
-// Nueva función `verifyResetToken` en `authController.js`
+
 exports.verifyResetToken = async (token) => {
     try {
         const user = await User.findByResetToken(token);
@@ -205,6 +208,43 @@ exports.updatePassword = async (req, res) => {
     }
 };
 
+// Función para cambiar la contraseña de un usuario autenticado
+exports.ChangePasswordAuthenticated = async (req, res) => {
+    const { currentPassword, newPassword } = req.body;
+    const userId = req.user.id;  // Suponiendo que la información del usuario está disponible en req.user
+
+    try {
+        // Obtener el usuario de la base de datos
+        const [rows] = await db.query(
+            "SELECT id, password FROM users WHERE id = ?",
+            [userId]
+        );
+
+        if (rows.length === 0) {
+            return res.status(404).json({ message: "Usuario no encontrado" });
+        }
+
+        const user = rows[0];
+
+        // Verificar si la contraseña actual es correcta
+        const isValidPassword = await bcrypt.compare(currentPassword, user.password);
+
+        if (!isValidPassword) {
+            return res.status(401).json({ message: "La contraseña actual es incorrecta" });
+        }
+
+        // Encriptar la nueva contraseña
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+        // Actualizar la contraseña en la base de datos
+        await db.query("UPDATE users SET password = ? WHERE id = ?", [hashedPassword, userId]);
+
+        res.status(200).json({ message: "Contraseña cambiada exitosamente" });
+    } catch (error) {
+        console.error('Error al cambiar la contraseña:', error);
+        res.status(500).json({ message: "Error en el servidor" });
+    }
+};
 
 exports.getUserInfo = async (req, res) => {
     try {

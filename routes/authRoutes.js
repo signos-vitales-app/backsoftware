@@ -10,7 +10,7 @@ router.post('/register', authController.register);
 router.post('/reset-password', authController.resetPassword);
 router.patch('/reset-password/:token', authController.updatePassword);
 router.patch('/update-profile-image', authMiddleware, authController.updateProfileImage);
-
+router.patch('/change-password', authMiddleware, authController.ChangePasswordAuthenticated);
 
 // Rutas protegidas
 router.get('/user-info', authMiddleware, authController.getUserInfo);
